@@ -31,6 +31,18 @@ app.use('/', (req, res) => {
   res.status(404).send({ message: 'Запрашиваемый ресурс не найден' });
 });
 
+// обработчик ошибок
+app.use((err, req, res) => {
+  const { statusCode = 500, message } = err;
+  res
+    .status(statusCode)
+    .send({
+      message: statusCode === 500
+        ? 'На сервере произошла ошибка'
+        : message,
+    });
+});
+
 app.listen(PORT, () => {
   console.log(`сервер запущен на ${PORT} порту`);
 });

@@ -3,6 +3,7 @@ const bcrypt = require('bcryptjs');
 const PasswordValidator = require('password-validator');
 const jwt = require('jsonwebtoken');
 const User = require('../models/user');
+const NotFoundError = require('../middlewares/errors/not-found-err');
 
 const { NODE_ENV, JWT_SECRET } = process.env;
 const passwordValidatorSchema = new PasswordValidator();
@@ -20,23 +21,24 @@ module.exports.getUsers = (req, res) => {
     .catch((err) => res.status(500).send({ message: err.message }));
 };
 
-module.exports.getUser = (req, res) => {
+module.exports.getUser = (req, res, next) => {
   const userId = req.params.id;
   User.findById(userId)
     .then((user) => {
       if (!user) {
-        res.status(404).send({ message: 'Нет пользователя с таким id' });
+        throw new NotFoundError('Нет пользователя с таким id');
       } else {
         res.send({ data: user });
       }
     })
-    .catch((err) => {
-      if (err.name === 'CastError') {
-        res.status(400).send({ message: 'Некорректный id пользователя' });
-      } else {
-        res.status(500).send({ message: err.message });
-      }
-    });
+    .catch(next);
+    // .catch((err) => {
+    //   if (err.name === 'CastError') {
+    //     res.status(400).send({ message: 'Некорректный id пользователя' });
+    //   } else {
+    //     res.status(500).send({ message: err.message });
+    //   }
+    // });
 };
 
 module.exports.createUser = (req, res) => {

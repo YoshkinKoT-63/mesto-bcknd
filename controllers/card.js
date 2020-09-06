@@ -1,4 +1,5 @@
 const Card = require('../models/card');
+const NotFoundError = require('../middlewares/errors/not-found-err');
 
 module.exports.getCards = (req, res) => {
   Card.find({})
@@ -25,7 +26,7 @@ module.exports.deleteCard = (req, res) => {
   Card.findByIdAndRemove(cardId)
     .then((card) => {
       if (!card) {
-        res.status(404).send({ message: 'Нет карточки с таким id' });
+        throw new NotFoundError('Нет карточки с таким id');
       } else if (card.owner.toString() !== req.user._id) {
         res.status(403).send({ message: 'Невозможно удалить чужую карточку' });
       } else {
