@@ -1,3 +1,4 @@
+/* eslint-disable consistent-return */
 require('dotenv').config();
 const express = require('express');
 const mongoose = require('mongoose');
@@ -27,22 +28,24 @@ app.use(auth);
 
 app.use('/cards', cards);
 app.use('/users', users);
-app.use('/', (req, res) => {
-  res.status(404).send({ message: 'Запрашиваемый ресурс не найден' });
-});
 
 // обработчик ошибок
-app.use((err, req, res) => {
-  const { statusCode = 500, message } = err;
+app.use((err, req, res, next) => {
+  const { statusCode = 500 } = err;
+  let { message } = err;
+  if (err.name === 'ValidationError') {
+    return res.status(400).send({ message: `Ошибка валидации:${err.message}` });
+  }
+
+  if (statusCode === 500) {
+    message = 'На сервере произошла ошибка';
+  }
   res
-    .status(statusCode)
-    .send({
-      message: statusCode === 500
-        ? 'На сервере произошла ошибка'
-        : message,
-    });
+    .status(statusCode).send({ message });
+  next();
 });
 
 app.listen(PORT, () => {
   console.log(`сервер запущен на ${PORT} порту`);
 });
+/* eslint-enable consistent-return */
