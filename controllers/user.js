@@ -5,7 +5,7 @@ const jwt = require('jsonwebtoken');
 const User = require('../models/user');
 const NotFoundError = require('../middlewares/errors/not-found-err');
 const Conflict = require('../middlewares/errors/conflict-err');
-const Unauthorized = require('../middlewares/errors/unauthorized');
+const Unauthorized = require('../middlewares/errors/unauthorized-err');
 
 const { NODE_ENV, JWT_SECRET } = process.env;
 const passwordValidatorSchema = new PasswordValidator();
