@@ -9,6 +9,7 @@ const users = require('./routes/users');
 const { login, createUser } = require('./controllers/user');
 const auth = require('./middlewares/auth');
 const { createUserValidation, loginValidation } = require('./middlewares/validation');
+const { requestLogger, errorLogger } = require('./middlewares/logger');
 
 const app = express();
 
@@ -22,6 +23,8 @@ mongoose.connect('mongodb://localhost:27017/mestodb', {
 });
 
 app.use(bodyParser.json());
+
+app.use(requestLogger);
 app.post('/signin', loginValidation, login);
 app.post('/signup', createUserValidation, createUser);
 
@@ -31,6 +34,7 @@ app.use(auth);
 app.use('/cards', cards);
 app.use('/users', users);
 
+app.use(errorLogger);
 // обработчик ошибок celebrate
 app.use(errors());
 // централизованный обработчик ошибок
