@@ -28,12 +28,12 @@ module.exports.loginValidation = celebrate({
 
 module.exports.cardIdValidation = celebrate({
   params: Joi.object().keys({
-    cardId: Joi.string(),
+    cardId: Joi.string().hex(),
   }),
 });
 
 module.exports.userIdValidation = celebrate({
   params: Joi.object().keys({
-    id: Joi.string(),
+    id: Joi.string().hex(),
   }),
 });
