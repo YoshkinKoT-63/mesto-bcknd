@@ -10,6 +10,7 @@ const { login, createUser } = require('./controllers/user');
 const auth = require('./middlewares/auth');
 const { createUserValidation, loginValidation } = require('./middlewares/validation');
 const { requestLogger, errorLogger } = require('./middlewares/logger');
+const NotFoundError = require('./middlewares/errors/not-found-err');
 
 const app = express();
 
@@ -40,6 +41,10 @@ app.use(auth);
 
 app.use('/cards', cards);
 app.use('/users', users);
+app.use('/', (req, res, next) => {
+  const error = new NotFoundError('Запрашиваемый ресурс не найден');
+  next(error);
+});
 
 app.use(errorLogger);
 // обработчик ошибок celebrate
