@@ -1,42 +1,32 @@
 const Card = require('../models/card');
+const NotFoundError = require('../middlewares/errors/not-found-err');
+const ForbiddenErr = require('../middlewares/errors/rorbidden-err');
 
-module.exports.getCards = (req, res) => {
+module.exports.getCards = (req, res, next) => {
   Card.find({})
     .populate('owner')
     .then((cards) => res.status(200).send({ data: cards }))
-    .catch((err) => res.status(500).send({ message: err.message }));
+    .catch(next);
 };
 
-module.exports.createCard = (req, res) => {
+module.exports.createCard = (req, res, next) => {
   const { name, link } = req.body;
   Card.create({ name, link, owner: req.user._id })
     .then((card) => res.send({ data: card }))
-    .catch((err) => {
-      if (err.name === 'ValidationError') {
-        res.status(400).send({ message: err.message });
-      } else {
-        res.status(500).send({ message: err.message });
-      }
-    });
+    .catch(next);
 };
 
-module.exports.deleteCard = (req, res) => {
+module.exports.deleteCard = (req, res, next) => {
   const { cardId } = req.params;
   Card.findByIdAndRemove(cardId)
     .then((card) => {
       if (!card) {
-        res.status(404).send({ message: 'Нет карточки с таким id' });
+        throw new NotFoundError('Нет карточки с таким id');
       } else if (card.owner.toString() !== req.user._id) {
-        res.status(403).send({ message: 'Невозможно удалить чужую карточку' });
+        throw new ForbiddenErr('Невозможно удалить чужую карточку');
       } else {
         res.send({ data: card });
       }
     })
-    .catch((err) => {
-      if (err.name === 'CastError') {
-        res.status(400).send({ message: 'Некорректный id карточки' });
-      } else {
-        res.status(500).send({ message: err.message });
-      }
-    });
+    .catch(next);
 };

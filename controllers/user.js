@@ -3,6 +3,9 @@ const bcrypt = require('bcryptjs');
 const PasswordValidator = require('password-validator');
 const jwt = require('jsonwebtoken');
 const User = require('../models/user');
+const NotFoundError = require('../middlewares/errors/not-found-err');
+const Conflict = require('../middlewares/errors/conflict-err');
+const Unauthorized = require('../middlewares/errors/unauthorized-err');
 
 const { NODE_ENV, JWT_SECRET } = process.env;
 const passwordValidatorSchema = new PasswordValidator();
@@ -14,51 +17,43 @@ passwordValidatorSchema
   .has().digits(1)
   .has().not().spaces();
 
-module.exports.getUsers = (req, res) => {
+module.exports.getUsers = (req, res, next) => {
   User.find({})
     .then((users) => res.status(200).send({ data: users }))
-    .catch((err) => res.status(500).send({ message: err.message }));
+    .catch(next);
 };
 
-module.exports.getUser = (req, res) => {
+module.exports.getUser = (req, res, next) => {
   const userId = req.params.id;
   User.findById(userId)
     .then((user) => {
       if (!user) {
-        res.status(404).send({ message: 'Нет пользователя с таким id' });
+        throw new NotFoundError('Нет пользователя с таким id');
       } else {
         res.send({ data: user });
       }
     })
-    .catch((err) => {
-      if (err.name === 'CastError') {
-        res.status(400).send({ message: 'Некорректный id пользователя' });
-      } else {
-        res.status(500).send({ message: err.message });
-      }
-    });
+    .catch(next);
 };
 
-module.exports.createUser = (req, res) => {
+module.exports.createUser = (req, res, next) => {
   const { name, about, avatar, email, password } = req.body;
   if (!passwordValidatorSchema.validate(password)) {
-    return res.status(401).send({ message: 'пароль должен быть не менее 8 символов, содержать заглавные и строчные буквы, цифры' });
+    throw new Unauthorized('пароль должен быть не менее 8 символов, содержать заглавные и строчные буквы, цифры');
   }
   bcrypt.hash(password, 10)
     .then((hash) => User.create({ name, about, avatar, email, password: hash }))
     .then(() => res.send({ email, name, about, avatar }))
     .catch((err) => {
-      if (err.name === 'ValidationError') {
-        res.status(400).send({ message: err.message });
-      } else if (err.code === 11000) {
-        res.status(409).send({ message: 'Этот email уже используется' });
-      } else {
-        res.status(500).send({ message: err.message });
+      if (err.code === 11000) {
+        throw new Conflict('Этот email уже используется');
       }
-    });
+      next(err);
+    })
+    .catch(next);
 };
 
-module.exports.login = (req, res) => {
+module.exports.login = (req, res, next) => {
   const { email, password } = req.body;
   return User.findUserByCredentials(email, password)
     .then((user) => {
@@ -74,10 +69,6 @@ module.exports.login = (req, res) => {
       });
       res.send({ token });
     })
-    .catch((err) => {
-      res
-        .status(401)
-        .send({ message: err.message });
-    });
+    .catch(next);
 };
 /* eslint-disable consistent-return, newline-per-chained-call, object-curly-newline */
